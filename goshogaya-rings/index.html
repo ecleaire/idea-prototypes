@@ -28,10 +28,10 @@
 const canvas=document.getElementById('scene'),loading=document.getElementById('loading');
 const gl=canvas.getContext('webgl',{antialias:true,alpha:false,depth:true,preserveDrawingBuffer:false});
 if(!gl){loading.textContent='WebGLに対応したブラウザで開いてください。';return;}
-const vs=`attribute vec3 aPos;attribute vec3 aNor;uniform mat4 uMVP;uniform mat4 uModel;uniform vec3 uCenter;varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying float vAngle;
-void main(){vec4 world=uModel*vec4(aPos,1.0);vPos=world.xyz;vNor=normalize(mat3(uModel)*aNor);vCluster=uCenter+aPos*0.23;vAngle=atan(aPos.y,aPos.x);gl_Position=uMVP*vec4(aPos,1.0);}`;
+const vs=`attribute vec3 aPos;attribute vec3 aNor;uniform mat4 uMVP;uniform mat4 uModel;uniform vec3 uCenter;varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying vec2 vDir;
+void main(){vec4 world=uModel*vec4(aPos,1.0);vPos=world.xyz;vNor=normalize(mat3(uModel)*aNor);vCluster=uCenter+aPos*0.23;vDir=normalize(aPos.xy);gl_Position=uMVP*vec4(aPos,1.0);}`;
 const fs=`precision highp float;
-varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying float vAngle;
+varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying vec2 vDir;
 uniform vec3 uEye;uniform vec3 uBase;uniform float uTime;uniform float uGradient;
 vec3 rainbow(float h){return clamp(abs(fract(h+vec3(0.0,0.666667,0.333333))*6.0-3.0)-1.0,0.0,1.0);}
 vec3 richColor(float h){return mix(vec3(0.11),rainbow(h),0.82);}
@@ -40,9 +40,10 @@ void main(){
   float hue=fract(0.60+vCluster.x*0.064+vCluster.y*0.070+vCluster.z*0.048+uTime*0.013);
   vec3 base=mix(uBase,richColor(hue),uGradient);
   // Colored, not white/black, marks reveal circular motion without changing shape.
-  // Because vAngle is the torus-local angle, the marks move with in-plane rotation.
-  float bandA=pow(max(cos(vAngle-0.20),0.0),11.0);
-  float bandB=pow(max(cos(vAngle-3.30),0.0),14.0);
+  // Ring-local direction avoids angle-wrap seams; marks move with in-plane rotation.
+  vec2 circumference=normalize(vDir);
+  float bandA=pow(max(dot(circumference,vec2(cos(0.20),sin(0.20))),0.0),11.0);
+  float bandB=pow(max(dot(circumference,vec2(cos(3.30),sin(3.30))),0.0),14.0);
   vec3 toneA=mix(clamp(uBase*0.68+vec3(0.12,0.06,0.07),0.12,0.96),richColor(fract(hue+0.14)),uGradient);
   vec3 toneB=mix(clamp(uBase*0.72+vec3(0.04,0.11,0.14),0.12,0.96),richColor(fract(hue-0.11)),uGradient);
   base=mix(base,toneA,0.90*bandA);
