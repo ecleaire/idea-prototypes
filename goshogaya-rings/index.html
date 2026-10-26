@@ -11,8 +11,8 @@
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>輪の大きさと中心位置は固定・2本組は形状セットのまま回転</p></header>
-<div class="badge"><strong id="ringCount">43</strong>同じ大きさのリング / 2本組はセット回転</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全輪が同じ直径・回転中も見かけのサイズを維持<br>2本組は形状セットのまま一体回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>全輪同一サイズ / 2本組は一体回転</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
@@ -62,14 +62,12 @@ let seed=88421;function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/42
 // Some cells contain a 2-ring cross set; those paired hoops rotate together as one rigid unit.
 const SPACING=1.2308;
 const rings=[];const units=[];let i=0;
-const randomAxis=()=>{let v;do{v=[rand()*2-1,rand()*2-1,rand()*2-1];}while(Math.hypot(...v)<0.2);return norm(v);};
 const orientOf=name=>name==='x'?quat([0,1,0],Math.PI/2):name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
 function addUnit(level,xi,zi,names){
  const center=[(xi-1)*SPACING,(1-level)*SPACING,(zi-1)*SPACING];
- const axis=randomAxis();
  const rate=(.48+rand()*1.27)*(rand()<.5?-1:1);
  const base=level===0?[.96,.45,.66]:level===1?[.15,.74,.51]:[.10,.56,.85];
- const unit={center,axis,rate,id:units.length,base,parts:[]};
+ const unit={center,rate,id:units.length,base,parts:[]};
  for(const name of names){
   const ring={center,orient:orientOf(name),id:i++,base,unit};
   rings.push(ring);
@@ -101,7 +99,9 @@ const slider=document.getElementById('speed'),number=document.getElementById('sp
 function setSpeed(x){x=Number(x);if(!Number.isFinite(x))return;speed=Math.max(0,x);number.value=speed.toFixed(1);if(speed>Number(slider.max))slider.max=String(Math.ceil(speed/100)*100);slider.value=String(speed);}
 slider.addEventListener('input',()=>setSpeed(slider.value));number.addEventListener('change',()=>setSpeed(number.value));
 const pauseBtn=document.getElementById('pause');function setPlaying(v){playing=v;pauseBtn.textContent=v?'一時停止':'再生';}pauseBtn.addEventListener('click',()=>setPlaying(!playing));
-let yaw=.63,pitch=.29,dist=10.3,tyaw=yaw,tpitch=pitch,tdist=dist,panX=0,panY=0,tpanX=0,tpanY=0;
+// Look along an equal-axis diagonal: X/Y/Z rings all have the same projected dimensions.
+const DEFAULT_YAW=Math.asin(1/Math.sqrt(3)),DEFAULT_PITCH=Math.PI/4;
+let yaw=DEFAULT_YAW,pitch=DEFAULT_PITCH,dist=10.3,tyaw=yaw,tpitch=pitch,tdist=dist,panX=0,panY=0,tpanX=0,tpanY=0;
 const mast=document.querySelector('.mast'),panel=document.querySelector('.panel');
 // Fit every ring inside the uncovered area above the controls (mobile and desktop).
 // All ring geometry has identical physical radius/tube; no per-ring scaling is used.
@@ -122,7 +122,7 @@ canvas.addEventListener('pointerdown',e=>{touch();points.set(e.pointerId,[e.clie
 canvas.addEventListener('pointermove',e=>{if(!points.has(e.pointerId))return;const old=points.get(e.pointerId);points.set(e.pointerId,[e.clientX,e.clientY]);if(points.size===1){tyaw+=(e.clientX-old[0])*.008;tpitch=Math.max(-1.4,Math.min(1.4,tpitch+(e.clientY-old[1])*.008));}else if(points.size===2){const [a,b]=Array.from(points.values()),d=Math.hypot(a[0]-b[0],a[1]-b[1]),mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];if(pinch!==null&&d>0)tdist=Math.max(4.5,Math.min(30,tdist*pinch/d));if(midPrev){const step=1/cameraLayout(tdist).scale;tpanX+=(mid[0]-midPrev[0])*step;tpanY-=(mid[1]-midPrev[1])*step;}pinch=d;midPrev=mid;}});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,e=>{points.delete(e.pointerId);pinch=null;midPrev=null;});
 canvas.addEventListener('wheel',e=>{e.preventDefault();tdist=Math.max(4.5,Math.min(30,tdist*Math.exp(e.deltaY*.001)));},{passive:false});
-document.getElementById('reset').addEventListener('click',()=>{tyaw=.63;tpitch=.29;tdist=10.3;tpanX=tpanY=0;});
+document.getElementById('reset').addEventListener('click',()=>{tyaw=DEFAULT_YAW;tpitch=DEFAULT_PITCH;tdist=10.3;tpanX=tpanY=0;});
 window.addEventListener('keydown',e=>{if(e.code==='Space'&&!['INPUT','BUTTON'].includes(document.activeElement?.tagName)){e.preventDefault();setPlaying(!playing);}});
 function draw(g,local,whole,vp,center,base){const world=mult(whole,local);gl.uniformMatrix4fv(U.model,false,world);gl.uniformMatrix4fv(U.mvp,false,mult(vp,world));gl.uniform3fv(U.center,new Float32Array(center));gl.uniform3fv(U.base,new Float32Array(base));gl.drawElements(gl.TRIANGLES,g.count,gl.UNSIGNED_SHORT,0);}
 gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);gl.clearColor(.956,.966,.98,1);loading.remove();
@@ -130,10 +130,23 @@ let previous=0;
 function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previous||16)/1000);previous=ms;if(playing)t+=dt*speed;
  const s=1-Math.exp(-dt*10);yaw+=(tyaw-yaw)*s;pitch+=(tpitch-pitch)*s;dist+=(tdist-dist)*s;panX+=(tpanX-panX)*s;panY+=(tpanY-panY)*s;
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- const wholeSpin=(mode==='spin'||mode==='both')?mult(rotY(t*.20),mult(rotZ(t*.08),rotX(t*.12))):mult(rotX(0),rotY(0));
- const whole=mult(rotY(yaw),mult(rotX(pitch),wholeSpin));const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
+ // Rotation about screen normal cannot change any hoop's projected major/minor diameters.
+ // baseView uses rigid rotations only; wholeSpin is applied AFTER camera-facing orientation.
+ const baseView=mult(rotY(yaw),rotX(pitch));
+ const wholeSpin=(mode==='spin'||mode==='both')?rotZ(t*.20):rotZ(0);
+ const whole=mult(wholeSpin,baseView);
+ // A unit's view-aligned axis in model coordinates = transpose(baseView) * [0,0,1].
+ const fixedScreenAxis=norm([baseView[2],baseView[6],baseView[10]]);
+ const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
- bindGeo(torus);for(const unit of units){const unitSpin=(mode==='local'||mode==='both')?quat(unit.axis,t*unit.rate):[0,0,0,1];for(const r of unit.parts){const local=mult(translate(...unit.center),matrixQ(qmul(unitSpin,r.orient)));draw(torus,local,whole,vp,unit.center,r.base);}}
+ bindGeo(torus);for(const unit of units){
+  // Random signed angular speed per unit, but NO random axis tilt or scaling.
+  const unitSpin=(mode==='local'||mode==='both')?quat(fixedScreenAxis,t*unit.rate):[0,0,0,1];
+  for(const r of unit.parts){
+   const local=mult(translate(...unit.center),matrixQ(qmul(unitSpin,r.orient)));
+   draw(torus,local,whole,vp,unit.center,r.base);
+  }
+ }
 
 }
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)setPlaying(false);
