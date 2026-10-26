@@ -11,8 +11,8 @@
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全輪が同じ直径・回転中も見かけのサイズを維持<br>2本組は形状セットのまま一体回転</p></header>
-<div class="badge"><strong id="ringCount">43</strong>全輪同一サイズ / 2本組は一体回転</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全43本の直径・太さを統一。見かけの大きさも一定に補正<br>2本組は交差した形状のまま一体回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>全43本同サイズ / 2本組は一体回転</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
@@ -130,20 +130,25 @@ let previous=0;
 function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previous||16)/1000);previous=ms;if(playing)t+=dt*speed;
  const s=1-Math.exp(-dt*10);yaw+=(tyaw-yaw)*s;pitch+=(tpitch-pitch)*s;dist+=(tdist-dist)*s;panX+=(tpanX-panX)*s;panY+=(tpanY-panY)*s;
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- // Rotation about screen normal cannot change any hoop's projected major/minor diameters.
- // baseView uses rigid rotations only; wholeSpin is applied AFTER camera-facing orientation.
+ // Camera-aware rigid rotation eliminates foreshortening mismatch without scaling/deforming rings.
+ // Every x/y/z plane has the SAME apparent ellipse shape (major radius R, minor radius R/sqrt(3)).
+ // Two perpendicular rings stay a 90-degree cross: the same rigid matrix applies to both.
  const baseView=mult(rotY(yaw),rotX(pitch));
+ const inverseBaseView=mult(rotX(-pitch),rotY(-yaw));
+ const uniformReferenceView=mult(rotY(DEFAULT_YAW),rotX(DEFAULT_PITCH));
  const wholeSpin=(mode==='spin'||mode==='both')?rotZ(t*.20):rotZ(0);
  const whole=mult(wholeSpin,baseView);
- // A unit's view-aligned axis in model coordinates = transpose(baseView) * [0,0,1].
- const fixedScreenAxis=norm([baseView[2],baseView[6],baseView[10]]);
  const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
- bindGeo(torus);for(const unit of units){
-  // Random signed angular speed per unit, but NO random axis tilt or scaling.
-  const unitSpin=(mode==='local'||mode==='both')?quat(fixedScreenAxis,t*unit.rate):[0,0,0,1];
+ bindGeo(torus);
+ for(const unit of units){
+  // This matrix is a pure rotation, not a scale. It depends on the camera so
+  // every hoop always has identical on-screen outline dimensions.
+  const angle=(mode==='local'||mode==='both')?t*unit.rate:0;
+  const orientation=mult(inverseBaseView,mult(rotZ(angle),uniformReferenceView));
+  const origin=translate(...unit.center);
   for(const r of unit.parts){
-   const local=mult(translate(...unit.center),matrixQ(qmul(unitSpin,r.orient)));
+   const local=mult(origin,mult(orientation,matrixQ(r.orient)));
    draw(torus,local,whole,vp,unit.center,r.base);
   }
  }
