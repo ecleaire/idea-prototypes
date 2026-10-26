@@ -11,8 +11,8 @@
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全43本の直径・太さを統一。見かけの大きさも一定に補正<br>2本組は交差した形状のまま一体回転</p></header>
-<div class="badge"><strong id="ringCount">43</strong>全43本同サイズ / 2本組は一体回転</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全43本は同じ直径・太さ。隣の輪とは常に接触<br>2本組は90°の十字を保って一体回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>接点を保持 · 十字は常に90°</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
@@ -60,14 +60,18 @@ let seed=88421;function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/42
 // Photo-inspired arrangement only: no Tinkercad geometry or connecting rods are imported.
 // All hoops are procedurally generated from the same torus geometry.
 // Some cells contain a 2-ring cross set; those paired hoops rotate together as one rigid unit.
-const SPACING=1.2308;
+const HOOP_RADIUS=0.555; // Identical centerline radius for all 43 hoops
+const HOOP_TUBE=0.047; // Identical tube radius for all 43 hoops
+const OUTER_RADIUS=HOOP_RADIUS+HOOP_TUBE;
+const SPACING=2*OUTER_RADIUS; // True surface tangency; adjacent hoops touch without penetrating
 const rings=[];const units=[];let i=0;
-const orientOf=name=>name==='x'?quat([0,1,0],Math.PI/2):name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
+// Both ring planes include local X (the fixed contact axis). Their normals are 90 degrees apart.
+const orientOf=name=>name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
 function addUnit(level,xi,zi,names){
  const center=[(xi-1)*SPACING,(1-level)*SPACING,(zi-1)*SPACING];
  const rate=(.48+rand()*1.27)*(rand()<.5?-1:1);
  const base=level===0?[.96,.45,.66]:level===1?[.15,.74,.51]:[.10,.56,.85];
- const unit={center,rate,id:units.length,base,parts:[]};
+ const unit={center,rate,id:units.length,base,parts:[],grid:[level,xi,zi]};
  for(const name of names){
   const ring={center,orient:orientOf(name),id:i++,base,unit};
   rings.push(ring);
@@ -78,19 +82,26 @@ function addUnit(level,xi,zi,names){
 for(let level=0;level<3;level++){
  for(let xi=0;xi<3;xi++)for(let zi=0;zi<3;zi++){
   const corner=xi!==1&&zi!==1;
-  if(level===0){
-   // Pink upper level: 4 corner cells are 2-ring cross sets, others are single upright hoops.
-   addUnit(level,xi,zi,corner?['z','x']:['z']);
-  }else if(level===1){
-   // Green middle level: vertical hoops plus selected horizontal cross pairs.
-   addUnit(level,xi,zi,(corner||(xi===1&&zi===1)||(xi===1&&zi===2))?[(xi+zi)%2?'x':'z','y']:[(xi+zi)%2?'x':'z']);
-  }else{
-   // Blue lower level: horizontal base hoops, plus selected perpendicular 2-ring sets.
-   addUnit(level,xi,zi,(corner||(xi===1&&zi!==1))?['y',(xi+zi)%2?'z':'x']:['y']);
-  }
+  // Every hoop contains the +/-X diameter: X rows are chains of permanent surface tangencies.
+  // Pairing adds the perpendicular XY/XZ hoop at the *same* center (a 90-degree cross).
+  const paired=level===0?corner:level===1?(corner||(xi===1&&zi===1)||(xi===1&&zi===2)):(corner||(xi===1&&zi!==1));
+  const singlePlane=level===2?'y':(xi+zi+level)%2?'z':'y';
+  addUnit(level,xi,zi,paired?['z','y']:[singlePlane]);
  }
 }
-if(rings.length!==43)throw Error('Unexpected hoop count: '+rings.length);
+// Contact invariant: x-neighbors are exactly 2*(R+tube) apart, outer surfaces touch.
+// Even while its group rotates about local X, the two outer surface points stay fixed.
+// All cells in the 3x3x3 layout have at least one x-neighbor, so every hoop touches a hoop.
+if(rings.length!==43||units.length!==27)throw Error('Unexpected hoop/cell count');
+for(const u of units){
+ const [ly,x,z]=u.grid;
+ const neighbors=units.filter(v=>v.grid[0]===ly&&v.grid[2]===z&&Math.abs(v.grid[1]-x)===1);
+ if(!neighbors.length||Math.abs(Math.abs(u.center[0]-neighbors[0].center[0])-2*OUTER_RADIUS)>1e-8)throw Error('Missing permanent ring contact');
+ if(u.parts.length===2){
+  // XY and XZ planes are exactly perpendicular and share the entire X diameter.
+  if(u.parts[0].orient[3]!==1||Math.abs(Math.abs(u.parts[1].orient[0])-Math.SQRT1_2)>1e-8)throw Error('Cross is not 90 degrees');
+ }
+}
 document.getElementById('ringCount').textContent=rings.length;
 function bindGeo(g){gl.bindBuffer(gl.ARRAY_BUFFER,g.bV);gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,g.bN);gl.enableVertexAttribArray(aNor);gl.vertexAttribPointer(aNor,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,g.bI);}
 let mode='local',colorMode='gradient',speed=1,playing=true,t=0;
@@ -99,7 +110,7 @@ const slider=document.getElementById('speed'),number=document.getElementById('sp
 function setSpeed(x){x=Number(x);if(!Number.isFinite(x))return;speed=Math.max(0,x);number.value=speed.toFixed(1);if(speed>Number(slider.max))slider.max=String(Math.ceil(speed/100)*100);slider.value=String(speed);}
 slider.addEventListener('input',()=>setSpeed(slider.value));number.addEventListener('change',()=>setSpeed(number.value));
 const pauseBtn=document.getElementById('pause');function setPlaying(v){playing=v;pauseBtn.textContent=v?'一時停止':'再生';}pauseBtn.addEventListener('click',()=>setPlaying(!playing));
-// Look along an equal-axis diagonal: X/Y/Z rings all have the same projected dimensions.
+// Orthographic diagonal view: true ring size is fixed; a rotated 3D circle may project as an ellipse.
 const DEFAULT_YAW=Math.asin(1/Math.sqrt(3)),DEFAULT_PITCH=Math.PI/4;
 let yaw=DEFAULT_YAW,pitch=DEFAULT_PITCH,dist=10.3,tyaw=yaw,tpitch=pitch,tdist=dist,panX=0,panY=0,tpanX=0,tpanY=0;
 const mast=document.querySelector('.mast'),panel=document.querySelector('.panel');
@@ -130,25 +141,20 @@ let previous=0;
 function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previous||16)/1000);previous=ms;if(playing)t+=dt*speed;
  const s=1-Math.exp(-dt*10);yaw+=(tyaw-yaw)*s;pitch+=(tpitch-pitch)*s;dist+=(tdist-dist)*s;panX+=(tpanX-panX)*s;panY+=(tpanY-panY)*s;
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- // Camera-aware rigid rotation eliminates foreshortening mismatch without scaling/deforming rings.
- // Every x/y/z plane has the SAME apparent ellipse shape (major radius R, minor radius R/sqrt(3)).
- // Two perpendicular rings stay a 90-degree cross: the same rigid matrix applies to both.
- const baseView=mult(rotY(yaw),rotX(pitch));
- const inverseBaseView=mult(rotX(-pitch),rotY(-yaw));
- const uniformReferenceView=mult(rotY(DEFAULT_YAW),rotX(DEFAULT_PITCH));
- const wholeSpin=(mode==='spin'||mode==='both')?rotZ(t*.20):rotZ(0);
- const whole=mult(wholeSpin,baseView);
+ // Rigid-only transforms: spin each unit around its X diameter, a line passing through
+ // two permanent contact points (x +/- OUTER_RADIUS). This works for random speeds/directions.
+ // Paired units share exactly one rotation matrix, so the 90-degree cross never opens.
+ const wholeSpin=(mode==='spin'||mode==='both')?mult(rotY(t*.20),mult(rotZ(t*.08),rotX(t*.12))):rotZ(0);
+ const whole=mult(rotY(yaw),mult(rotX(pitch),wholeSpin));
  const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
  bindGeo(torus);
  for(const unit of units){
-  // This matrix is a pure rotation, not a scale. It depends on the camera so
-  // every hoop always has identical on-screen outline dimensions.
   const angle=(mode==='local'||mode==='both')?t*unit.rate:0;
-  const orientation=mult(inverseBaseView,mult(rotZ(angle),uniformReferenceView));
+  const spin=quat([1,0,0],angle);
   const origin=translate(...unit.center);
   for(const r of unit.parts){
-   const local=mult(origin,mult(orientation,matrixQ(r.orient)));
+   const local=mult(origin,matrixQ(qmul(spin,r.orient)));
    draw(torus,local,whole,vp,unit.center,r.base);
   }
  }
