@@ -6,22 +6,22 @@
 <meta name="theme-color" content="#f4f6f9">
 <title>RING STRUCTURE | 御所ヶ谷公園モデル</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;color:#24334a;background:#f4f6f9}*{box-sizing:border-box}body{margin:0;overflow:hidden}button,input{font:inherit}canvas{position:fixed;inset:0;width:100vw;height:100dvh;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}.mast{position:absolute;top:max(24px,env(safe-area-inset-top));left:clamp(18px,4vw,58px);pointer-events:none}.eyebrow{font-size:10px;letter-spacing:.19em;font-weight:750;color:#8491a2}.mast h1{font-size:24px;letter-spacing:-.04em;margin:9px 0 7px}.mast p{font-size:12px;color:#8290a0;line-height:1.6;margin:0}.badge{position:absolute;top:28px;right:clamp(18px,4vw,58px);text-align:right;font-size:11px;color:#8290a0;pointer-events:none}.badge strong{display:block;color:#253850;font-size:26px}.tip{position:absolute;bottom:180px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#98a4b3;font-size:12px;pointer-events:none;transition:opacity .2s}.panel{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(990px,calc(100vw - 28px));display:flex;gap:17px;align-items:end;flex-wrap:wrap;padding:17px;background:#ffffffef;border:1px solid #dce4ec;border-radius:20px;box-shadow:0 18px 60px #2637521f;backdrop-filter:blur(15px)}.field{display:flex;flex-direction:column;gap:8px}.field>label,.field>.field-title{font-size:10px;font-weight:770;letter-spacing:.06em;color:#8493a4}.seg{display:flex;padding:4px;background:#edf1f5;border-radius:11px;gap:2px}.seg button{border:0;background:transparent;color:#708195;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:670;cursor:pointer;white-space:nowrap}.seg button.active{background:white;color:#23384e;box-shadow:0 2px 8px #41587528}.speed{flex:1;min-width:175px}.speed-line{display:flex;align-items:center;justify-content:space-between;gap:8px}.speed-line input[type=number]{width:78px;height:32px;padding:0 6px;text-align:right;background:#f5f8fa;border:1px solid #d9e2eb;border-radius:8px;color:#2a465d;font-weight:700;font-size:13px}.speed input[type=range]{width:100%;height:20px;accent-color:#456b83;cursor:pointer}.actions{display:flex;gap:7px}.actions button{white-space:nowrap;background:white;border:1px solid #d9e1e9;color:#50647a;border-radius:10px;padding:11px 12px;font-size:12px;font-weight:700;cursor:pointer}.actions button.primary{background:#2b4259;color:#fff;border-color:#2b4259}.minor{position:absolute;bottom:9px;left:clamp(18px,4vw,58px);font-size:10px;color:#a3aeb9;pointer-events:none}.loading{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);background:#fffffff0;padding:13px 20px;border:1px solid #dce4ec;border-radius:11px;color:#60738a;font-size:13px;pointer-events:none}.panel button:focus-visible,.panel input:focus-visible{outline:2px solid #5b91c2;outline-offset:2px}@media(max-width:800px){.panel{bottom:max(11px,env(safe-area-inset-bottom));padding:12px;gap:12px}.field.color{width:100%}.field.rotation{width:100%}.seg button{flex:1;padding:10px 5px}.tip{bottom:233px;font-size:10px}.badge{top:30px;font-size:0}.badge strong{font-size:24px}.minor{display:none}.speed{min-width:145px}.actions{align-self:end}.mast h1{font-size:21px}.mast p{font-size:10px}}@media(max-width:420px){.tip{bottom:234px}.actions button{padding:11px 8px;font-size:11px}}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;color:#24334a;background:#f4f6f9}*{box-sizing:border-box}body{margin:0;overflow:hidden}button,input{font:inherit}canvas{position:fixed;inset:0;width:100vw;height:100dvh;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}.mast{position:absolute;top:max(24px,env(safe-area-inset-top));left:clamp(18px,4vw,58px);pointer-events:none}.eyebrow{font-size:10px;letter-spacing:.19em;font-weight:750;color:#8491a2}.mast h1{font-size:24px;letter-spacing:-.04em;margin:9px 0 7px}.mast p{font-size:12px;color:#8290a0;line-height:1.6;margin:0}.badge{position:absolute;top:28px;right:clamp(18px,4vw,58px);text-align:right;font-size:11px;color:#8290a0;pointer-events:none}.badge strong{display:block;color:#253850;font-size:26px}.tip{position:absolute;bottom:180px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#98a4b3;font-size:12px;pointer-events:none;transition:opacity .2s}.panel{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(990px,calc(100vw - 28px));display:flex;gap:17px;align-items:end;flex-wrap:wrap;padding:17px;background:#ffffffef;border:1px solid #dce4ec;border-radius:20px;box-shadow:0 18px 60px #2637521f;backdrop-filter:blur(15px)}.field{display:flex;flex-direction:column;gap:8px}.field>label,.field>.field-title{font-size:10px;font-weight:770;letter-spacing:.06em;color:#8493a4}.seg{display:flex;padding:4px;background:#edf1f5;border-radius:11px;gap:2px}.seg button{border:0;background:transparent;color:#708195;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:670;cursor:pointer;white-space:nowrap}.seg button.active{background:white;color:#23384e;box-shadow:0 2px 8px #41587528}.speed{flex:1;min-width:175px}.speed-line{display:flex;align-items:center;justify-content:space-between;gap:8px}.speed-line input[type=number]{width:78px;height:32px;padding:0 6px;text-align:right;background:#f5f8fa;border:1px solid #d9e2eb;border-radius:8px;color:#2a465d;font-weight:700;font-size:13px}.speed input[type=range]{width:100%;height:20px;accent-color:#456b83;cursor:pointer}.actions{display:flex;gap:7px}.actions button{white-space:nowrap;background:white;border:1px solid #d9e1e9;color:#50647a;border-radius:10px;padding:11px 12px;font-size:12px;font-weight:700;cursor:pointer}.actions button.primary{background:#2b4259;color:#fff;border-color:#2b4259}.minor{position:absolute;bottom:9px;left:clamp(18px,4vw,58px);font-size:10px;color:#a3aeb9;pointer-events:none}.loading{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);background:#fffffff0;padding:13px 20px;border:1px solid #dce4ec;border-radius:11px;color:#60738a;font-size:13px;pointer-events:none}.panel button:focus-visible,.panel input:focus-visible{outline:2px solid #5b91c2;outline-offset:2px}@media(max-width:800px){.panel{bottom:max(11px,env(safe-area-inset-bottom));padding:12px;gap:12px}.field.color{width:100%}.field.rotation{width:100%}.seg button{flex:1;padding:10px 3px;font-size:11px}.tip{bottom:233px;font-size:10px}.badge{top:30px;font-size:0}.badge strong{font-size:24px}.minor{display:none}.speed{min-width:145px}.actions{align-self:end}.mast h1{font-size:21px}.mast p{font-size:10px}}@media(max-width:420px){.tip{bottom:234px}.actions button{padding:11px 8px;font-size:11px}}
 </style>
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>輪の大きさと見え方は回転中も固定・隣の輪と接触<br>2本組は90°の十字を保ち、光と円周方向が同期</p></header>
-<div class="badge"><strong id="ringCount">43</strong>大きさ固定 · 接点保持 · 十字90°</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全輪同じ直径・太さ。隣同士の接点を維持<br>2本組は常に90°のまま一体で立体回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>直径統一 · 接点保持 · 十字90°</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
  <div class="field color"><div class="field-title">COLOR MODE</div><div class="seg" id="colors"><button type="button" data-color="original">公園の3色</button><button type="button" class="active" data-color="gradient">連続グラデーション</button></div></div>
- <div class="field rotation"><div class="field-title">ROTATION</div><div class="seg" id="motion"><button type="button" data-motion="local" class="active">輪ごと</button><button type="button" data-motion="both">両方</button><button type="button" data-motion="spin">全体</button><button type="button" data-motion="still">静止</button></div></div>
+ <div class="field rotation"><div class="field-title">ROTATION · 立体回転 / サイズ優先</div><div class="seg" id="motion"><button type="button" data-motion="local" class="active">輪ごと3D</button><button type="button" data-motion="fixed">見た目固定</button><button type="button" data-motion="both">両方</button><button type="button" data-motion="spin">全体</button><button type="button" data-motion="still">静止</button></div></div>
  <div class="field speed"><label for="speed">回転速度（数値入力は上限なし）</label><div class="speed-line"><input type="range" id="speed" min="0" max="100" value="1" step="0.1"><input type="number" id="speedNumber" min="0" value="1.0" step="0.1" aria-label="回転速度の数値入力"></div></div>
  <div class="actions"><button id="reset" type="button">視点リセット</button><button id="pause" type="button" class="primary">一時停止</button></div>
 </div>
-<div class="minor">PROCEDURAL GEOMETRY — photo-inspired layout · all hoops same diameter · rings only</div>
+<div class="minor">3D回転は円の向きが変化します。見た目固定は輪郭を維持して表面の模様が回ります。</div>
 <script>
 (()=>{
 'use strict';
@@ -33,8 +33,16 @@ void main(){vec4 world=uModel*vec4(aPos,1.0);vPos=world.xyz;vNor=normalize(mat3(
 const fs=`precision highp float;varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying float vAngle;uniform vec3 uEye;uniform vec3 uBase;uniform float uTime;uniform float uGradient;
 vec3 rgb(float h){return clamp(abs(fract(h+vec3(0.,0.666667,0.333333))*6.-3.)-1.,0.,1.);}
 void main(){float hue=fract(.63+vCluster.x*.064+vCluster.y*.070+vCluster.z*.048+uTime*.014+.018*sin(uTime*.18+vCluster.x*.8+vCluster.z*.7));vec3 spectrum=mix(vec3(1.),rgb(hue),.82);vec3 base=mix(uBase,spectrum,uGradient);
-// Symmetry-preserving ring rotation: a soft glint travels with each rigid in-plane spin.
-float glint=pow(max(0.,cos(vAngle)),10.0);float ribbon=.08*sin(vAngle*3.0+1.3);base*=1.0+.27*glint+ribbon;
+// Surface markings live on the moving torus. At least two bright contrasting arcs
+// make in-plane spins readable while the geometry and contact points remain unchanged.
+float a=atan(sin(vAngle-0.25),cos(vAngle-0.25));
+float b=atan(sin(vAngle-3.15),cos(vAngle-3.15));
+float luminous=1.0-smoothstep(.16,.29,abs(a));
+float shadow=1.0-smoothstep(.14,.24,abs(b));
+float sheen=.08*sin(vAngle*4.0+.9);
+base=mix(base,vec3(.98,.99,1.0),luminous*.88);
+base=mix(base,vec3(.10,.15,.26),shadow*.78);
+base*=1.0+sheen;
 vec3 N=normalize(vNor),L=normalize(vec3(-.47,.79,.7)),V=normalize(uEye-vPos),H=normalize(L+V);float light=.68+.30*max(0.,dot(N,L))+.09*max(0.,dot(N,normalize(vec3(.8,-.17,-.25))));float spec=.28*pow(max(0.,dot(N,H)),38.);gl_FragColor=vec4(min(vec3(1.),base*light+vec3(spec)),1.0);}`;
 function makeShader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
 let program;
@@ -62,7 +70,7 @@ function matrixQ(q){const [x,y,z,w]=q,xx=x*x,yy=y*y,zz=z*z,xy=x*y,xz=x*z,yz=y*z,
 let seed=88421;function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
 // Photo-inspired arrangement only: no Tinkercad geometry or connecting rods are imported.
 // All hoops are procedurally generated from the same torus geometry.
-// Some cells contain two perpendicular hoops; each hoop spins about its own normal at the same shared speed, without changing the visible cross.
+// Some cells contain two perpendicular hoops; a pair is transformed by the same rigid quaternion to preserve the 90-degree cross.
 const HOOP_RADIUS=0.555; // Identical centerline radius for all 43 hoops
 const HOOP_TUBE=0.047; // Identical tube radius for all 43 hoops
 const OUTER_RADIUS=HOOP_RADIUS+HOOP_TUBE;
@@ -93,7 +101,7 @@ for(let level=0;level<3;level++){
  }
 }
 // Contact invariant: x-neighbors are exactly 2*(R+tube) apart, outer surfaces touch.
-// Each ring rotates inside its own plane, so the shape and external contact points stay fixed.
+// Every ring contains the X diameter and spins about that diameter: outer contacts stay fixed.
 // All cells in the 3x3x3 layout have at least one x-neighbor, so every hoop touches a hoop.
 if(rings.length!==43||units.length!==27)throw Error('Unexpected hoop/cell count');
 for(const u of units){
@@ -144,23 +152,25 @@ let previous=0;
 function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previous||16)/1000);previous=ms;if(playing)t+=dt*speed;
  const s=1-Math.exp(-dt*10);yaw+=(tyaw-yaw)*s;pitch+=(tpitch-pitch)*s;dist+=(tdist-dist)*s;panX+=(tpanX-panX)*s;panY+=(tpanY-panY)*s;
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- // Continuous rigid in-plane spins: a perfect circle is rotationally symmetric around its normal.
- // Consequently, every hoop keeps exactly the same outline and every x-neighbor contact stays put.
- // A paired set shares the same angle/rate, so its 90-degree crossed geometry remains untouched.
- // Automatic whole-model spin is also only about the screen normal (Z): no foreshortening animation.
+ // The fixed X diameter is a geometric invariant shared by every hoop in one row.
+ // Rigidly spinning each unit about that X axis makes the rings visibly tilt,
+ // while leaving its +/-X contacts unmoved and its 90-degree paired cross intact.
+ // A flat circular ring cannot visibly turn inside its own plane unless we give it
+ // non-uniform surface markings (see shader); that is the 'fixed' alternative.
  const wholeSpin=(mode==='spin'||mode==='both')?rotZ(t*.20):rotZ(0);
  const whole=mult(wholeSpin,mult(rotY(yaw),rotX(pitch)));
  const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
  bindGeo(torus);
  for(const unit of units){
-  const angle=(mode==='local'||mode==='both')?t*unit.rate:0;
-  const spin=quat([0,0,1],angle);
+  const angle=(mode==='local'||mode==='both'||mode==='fixed')?t*unit.rate:0;
+  const rigidSpin=quat([1,0,0],angle); // The shared X diameter is stationary in space.
+  const normalSpin=quat([0,0,1],angle); // Visible only through ring-surface markings.
   const origin=translate(...unit.center);
   for(const r of unit.parts){
-   // Rotate locally BEFORE orienting the XY hoop into its stationary plane.
-   // Rotating the unit as a solid around X would tip the circles and visibly change their size.
-   const local=mult(origin,matrixQ(qmul(r.orient,spin)));
+   // Paired hoops receive exactly the same rigid matrix and never bend or scale.
+   const orientation=mode==='fixed'?qmul(r.orient,normalSpin):qmul(rigidSpin,r.orient);
+   const local=mult(origin,matrixQ(orientation));
    draw(torus,local,whole,vp,unit.center,r.base);
   }
  }
