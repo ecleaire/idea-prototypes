@@ -11,8 +11,8 @@
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>輪の大きさと中心位置は固定・各輪は独立回転</p></header>
-<div class="badge"><strong id="ringCount">43</strong>同じ大きさの独立リング</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>輪の大きさと中心位置は固定・2本組は形状セットのまま回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>同じ大きさのリング / 2本組はセット回転</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
@@ -43,11 +43,8 @@ function createTorus(radius=0.555,tube=0.047,segments=80,tubeSteps=13){const ver
  for(let i=0;i<=segments;i++){const a=2*Math.PI*i/segments,c=Math.cos(a),s=Math.sin(a);for(let j=0;j<=tubeSteps;j++){const b=2*Math.PI*j/tubeSteps,v=Math.cos(b),w=Math.sin(b);vertices.push((radius+tube*v)*c,(radius+tube*v)*s,tube*w);normals.push(v*c,v*s,w);}}
  for(let i=0;i<segments;i++)for(let j=0;j<tubeSteps;j++){const a=i*(tubeSteps+1)+j,b=a+tubeSteps+1;indices.push(a,b,a+1,b,b+1,a+1);}
  return {vertices,normals,indices};}
-function createCylinder(length=3.70,radius=0.025,steps=16){const vertices=[],normals=[],indices=[];
- for(let i=0;i<2;i++){const x=(i?0.5:-0.5)*length;for(let j=0;j<=steps;j++){const a=2*Math.PI*j/steps,y=Math.cos(a),z=Math.sin(a);vertices.push(x,radius*y,radius*z);normals.push(0,y,z);}}
- for(let j=0;j<steps;j++){const a=j,b=j+steps+1;indices.push(a,b,a+1,b,b+1,a+1);}return {vertices,normals,indices};}
 function upload(g){const bV=gl.createBuffer(),bN=gl.createBuffer(),bI=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bV);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(g.vertices),gl.STATIC_DRAW);gl.bindBuffer(gl.ARRAY_BUFFER,bN);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(g.normals),gl.STATIC_DRAW);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,bI);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(g.indices),gl.STATIC_DRAW);return {bV,bN,bI,count:g.indices.length};}
-const torus=upload(createTorus()),bar=upload(createCylinder());
+const torus=upload(createTorus());
 function mult(a,b){const m=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let sum=0;for(let k=0;k<4;k++)sum+=a[k*4+r]*b[c*4+k];m[c*4+r]=sum;}return m;}
 function persp(fovy,ratio,n,f){const a=1/Math.tan(fovy/2),m=new Float32Array(16);m[0]=a/ratio;m[5]=a;m[10]=(n+f)/(n-f);m[11]=-1;m[14]=2*n*f/(n-f);return m;}
 function translate(x,y,z){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1]);}
@@ -60,40 +57,42 @@ function qmul(a,b){return [a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0
 function matrixQ(q){const [x,y,z,w]=q,xx=x*x,yy=y*y,zz=z*z,xy=x*y,xz=x*z,yz=y*z,wx=w*x,wy=w*y,wz=w*z;return new Float32Array([1-2*(yy+zz),2*(xy+wz),2*(xz-wy),0,2*(xy-wz),1-2*(xx+zz),2*(yz+wx),0,2*(xz+wy),2*(yz-wx),1-2*(xx+yy),0,0,0,0,1]);}
 let seed=88421;function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
 // Photo-inspired arrangement only: no Tinkercad geometry or connecting rods are imported.
-// All 43 closed hoops are independently generated from the exact same torus geometry.
-// Radius 0.555 / tube radius 0.047 match the preceding published version.
-// 'x' = vertical YZ plane, 'z' = vertical XY plane, 'y' = horizontal XZ plane.
+// All hoops are procedurally generated from the same torus geometry.
+// Some cells contain a 2-ring cross set; those paired hoops rotate together as one rigid unit.
 const SPACING=1.2308;
-const rings=[];let i=0;
+const rings=[];const units=[];let i=0;
 const randomAxis=()=>{let v;do{v=[rand()*2-1,rand()*2-1,rand()*2-1];}while(Math.hypot(...v)<0.2);return norm(v);};
-function addRing(level,xi,zi,name){
- const orient=name==='x'?quat([0,1,0],Math.PI/2):name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
- const dir=randomAxis();
+const orientOf=name=>name==='x'?quat([0,1,0],Math.PI/2):name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
+function addUnit(level,xi,zi,names){
+ const center=[(xi-1)*SPACING,(1-level)*SPACING,(zi-1)*SPACING];
+ const axis=randomAxis();
  const rate=(.48+rand()*1.27)*(rand()<.5?-1:1);
- rings.push({center:[(xi-1)*SPACING,(1-level)*SPACING,(zi-1)*SPACING],orient,axis:dir,rate,id:i++,base:level===0?[.96,.45,.66]:level===1?[.15,.74,.51]:[.10,.56,.85]});
+ const base=level===0?[.96,.45,.66]:level===1?[.15,.74,.51]:[.10,.56,.85];
+ const unit={center,axis,rate,id:units.length,base,parts:[]};
+ for(const name of names){
+  const ring={center,orient:orientOf(name),id:i++,base,unit};
+  rings.push(ring);
+  unit.parts.push(ring);
+ }
+ units.push(unit);
 }
 for(let level=0;level<3;level++){
  for(let xi=0;xi<3;xi++)for(let zi=0;zi<3;zi++){
   const corner=xi!==1&&zi!==1;
   if(level===0){
-   // Pink upper level: upright rings, with cross-hoops at the four corners.
-   addRing(level,xi,zi,'z');
-   if(corner)addRing(level,xi,zi,'x');
+   // Pink upper level: 4 corner cells are 2-ring cross sets, others are single upright hoops.
+   addUnit(level,xi,zi,corner?['z','x']:['z']);
   }else if(level===1){
-   // Green middle level: upright rings and six orthogonal horizontal crosses.
-   addRing(level,xi,zi,(xi+zi)%2?'x':'z');
-   if(corner||(xi===1&&zi===1)||(xi===1&&zi===2))addRing(level,xi,zi,'y');
+   // Green middle level: vertical hoops plus selected horizontal cross pairs.
+   addUnit(level,xi,zi,(corner||(xi===1&&zi===1)||(xi===1&&zi===2))?[(xi+zi)%2?'x':'z','y']:[(xi+zi)%2?'x':'z']);
   }else{
-   // Blue lower level: horizontal rings, with six perpendicular vertical crosses.
-   addRing(level,xi,zi,'y');
-   if(corner||(xi===1&&zi!==1))addRing(level,xi,zi,(xi+zi)%2?'z':'x');
+   // Blue lower level: horizontal base hoops, plus selected perpendicular 2-ring sets.
+   addUnit(level,xi,zi,(corner||(xi===1&&zi!==1))?['y',(xi+zi)%2?'z':'x']:['y']);
   }
  }
 }
-// 13 pink + 15 green + 15 blue = 43 identically sized closed rings.
 if(rings.length!==43)throw Error('Unexpected hoop count: '+rings.length);
 document.getElementById('ringCount').textContent=rings.length;
-const rods=[];for(let layer=0;layer<3;layer++)for(let zi=0;zi<3;zi++)rods.push({center:[0,(1-layer)*1.2308,(zi-1)*1.2308],base:layer===0?[.96,.45,.66]:layer===1?[.15,.74,.51]:[.10,.56,.85]});
 function bindGeo(g){gl.bindBuffer(gl.ARRAY_BUFFER,g.bV);gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,g.bN);gl.enableVertexAttribArray(aNor);gl.vertexAttribPointer(aNor,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,g.bI);}
 let mode='local',colorMode='gradient',speed=1,playing=true,t=0;
 for(const [id,key,change] of [['colors','color',s=>colorMode=s],['motion','motion',s=>mode=s]])for(const b of document.querySelectorAll('#'+id+' button'))b.addEventListener('click',()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('active',x===b));change(b.dataset[key]);});
@@ -119,8 +118,8 @@ function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previo
  const wholeSpin=(mode==='spin'||mode==='both')?mult(rotY(t*.20),mult(rotZ(t*.08),rotX(t*.12))):mult(rotX(0),rotY(0));
  const whole=mult(rotY(yaw),mult(rotX(pitch),wholeSpin));const eye=[0,0,dist];const vp=mult(persp(Math.PI/3.4,w/h,.1,80),translate(panX,panY,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
- bindGeo(torus);for(const r of rings){const spin=(mode==='local'||mode==='both')?quat(r.axis,t*r.rate):[0,0,0,1];const local=mult(translate(...r.center),matrixQ(qmul(spin,r.orient)));draw(torus,local,whole,vp,r.center,r.base);}
- bindGeo(bar);for(const rod of rods)draw(bar,translate(...rod.center),whole,vp,rod.center,rod.base);
+ bindGeo(torus);for(const unit of units){const unitSpin=(mode==='local'||mode==='both')?quat(unit.axis,t*unit.rate):[0,0,0,1];for(const r of unit.parts){const local=mult(translate(...unit.center),matrixQ(qmul(unitSpin,r.orient)));draw(torus,local,whole,vp,unit.center,r.base);}}
+
 }
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)setPlaying(false);
 requestAnimationFrame(frame);
