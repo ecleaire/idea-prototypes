@@ -11,8 +11,8 @@
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園のリング遊具を参考にした3層構造<br>輪の中心位置を固定した個別回転</p></header>
-<div class="badge"><strong id="ringCount">43</strong>独立して回転する輪</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>輪の大きさと中心位置は固定・各輪は独立回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>同じ大きさの独立リング</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
@@ -21,7 +21,7 @@
  <div class="field speed"><label for="speed">回転速度（数値入力は上限なし）</label><div class="speed-line"><input type="range" id="speed" min="0" max="100" value="1" step="0.1"><input type="number" id="speedNumber" min="0" value="1.0" step="0.1" aria-label="回転速度の数値入力"></div></div>
  <div class="actions"><button id="reset" type="button">視点リセット</button><button id="pause" type="button" class="primary">一時停止</button></div>
 </div>
-<div class="minor">USER-SUPPLIED TINKERCAD MODEL — ring positions and orientations were reconstructed as independent rigid circles</div>
+<div class="minor">PROCEDURAL GEOMETRY — photo-inspired layout · all hoops same diameter · rings only</div>
 <script>
 (()=>{
 'use strict';
@@ -59,24 +59,39 @@ function quat(axis,angle){const v=norm(axis),s=Math.sin(angle/2);return [v[0]*s,
 function qmul(a,b){return [a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3]+a[3]*b[0],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];}
 function matrixQ(q){const [x,y,z,w]=q,xx=x*x,yy=y*y,zz=z*z,xy=x*y,xz=x*z,yz=y*z,wx=w*x,wy=w*y,wz=w*z;return new Float32Array([1-2*(yy+zz),2*(xy+wz),2*(xz-wy),0,2*(xy-wz),1-2*(xx+zz),2*(yz+wx),0,2*(xz+wy),2*(yz-wx),1-2*(xx+yy),0,0,0,0,1]);}
 let seed=88421;function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
-const axisSets=[
- // Upper level: ring axes classified from the user's Tinkercad mesh
- [['x','y'],['x'],['y','z']], [['x','z'],['x'],['y']], [['x','y'],['x'],['x','z']],
- // Middle level
- [['y','z'],['x'],['y','z']], [['y','z'],['x'],['y']], [['y','z'],['x'],['y','z']],
- // Lower level
- [['y','z'],['x','y'],['x','y']], [['x','y'],['x'],['y']], [['x','y'],['x'],['x','y']]
-];
-// Arrays are layer by layer, each row is an X position and each column is Z.
+// Photo-inspired arrangement only: no Tinkercad geometry or connecting rods are imported.
+// All 43 closed hoops are independently generated from the exact same torus geometry.
+// Radius 0.555 / tube radius 0.047 match the preceding published version.
+// 'x' = vertical YZ plane, 'z' = vertical XY plane, 'y' = horizontal XZ plane.
+const SPACING=1.2308;
 const rings=[];let i=0;
-for(let level=0;level<3;level++)for(let xi=0;xi<3;xi++)for(let zi=0;zi<3;zi++){
- const axes=axisSets[level*3+xi][zi];
- for(const name of axes){const n=name==='x'?[1,0,0]:name==='y'?[0,1,0]:[0,0,1];
-   const orient=name==='x'?quat([0,1,0],Math.PI/2):name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
-   const dir=norm([rand()*2-1,rand()*2-1,rand()*2-1]);const rate=(.50+rand()*1.18)*(rand()<.5?-1:1);
-   rings.push({center:[(xi-1)*1.2308,(1-level)*1.2308,(zi-1)*1.2308],orient,axis:dir,rate,id:i++,base:level===0?[.96,.45,.66]:level===1?[.15,.74,.51]:[.10,.56,.85]});
+const randomAxis=()=>{let v;do{v=[rand()*2-1,rand()*2-1,rand()*2-1];}while(Math.hypot(...v)<0.2);return norm(v);};
+function addRing(level,xi,zi,name){
+ const orient=name==='x'?quat([0,1,0],Math.PI/2):name==='y'?quat([1,0,0],-Math.PI/2):[0,0,0,1];
+ const dir=randomAxis();
+ const rate=(.48+rand()*1.27)*(rand()<.5?-1:1);
+ rings.push({center:[(xi-1)*SPACING,(1-level)*SPACING,(zi-1)*SPACING],orient,axis:dir,rate,id:i++,base:level===0?[.96,.45,.66]:level===1?[.15,.74,.51]:[.10,.56,.85]});
+}
+for(let level=0;level<3;level++){
+ for(let xi=0;xi<3;xi++)for(let zi=0;zi<3;zi++){
+  const corner=xi!==1&&zi!==1;
+  if(level===0){
+   // Pink upper level: upright rings, with cross-hoops at the four corners.
+   addRing(level,xi,zi,'z');
+   if(corner)addRing(level,xi,zi,'x');
+  }else if(level===1){
+   // Green middle level: upright rings and six orthogonal horizontal crosses.
+   addRing(level,xi,zi,(xi+zi)%2?'x':'z');
+   if(corner||(xi===1&&zi===1)||(xi===1&&zi===2))addRing(level,xi,zi,'y');
+  }else{
+   // Blue lower level: horizontal rings, with six perpendicular vertical crosses.
+   addRing(level,xi,zi,'y');
+   if(corner||(xi===1&&zi!==1))addRing(level,xi,zi,(xi+zi)%2?'z':'x');
+  }
  }
 }
+// 13 pink + 15 green + 15 blue = 43 identically sized closed rings.
+if(rings.length!==43)throw Error('Unexpected hoop count: '+rings.length);
 document.getElementById('ringCount').textContent=rings.length;
 const rods=[];for(let layer=0;layer<3;layer++)for(let zi=0;zi<3;zi++)rods.push({center:[0,(1-layer)*1.2308,(zi-1)*1.2308],base:layer===0?[.96,.45,.66]:layer===1?[.15,.74,.51]:[.10,.56,.85]});
 function bindGeo(g){gl.bindBuffer(gl.ARRAY_BUFFER,g.bV);gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,g.bN);gl.enableVertexAttribArray(aNor);gl.vertexAttribPointer(aNor,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,g.bI);}
