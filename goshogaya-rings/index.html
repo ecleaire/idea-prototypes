@@ -10,18 +10,18 @@
 </style>
 </head>
 <body>
-<canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪が個別に剛体回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全輪同じ直径・太さ。隣同士の接点を維持<br>2本組は常に90°のまま一体で立体回転</p></header>
-<div class="badge"><strong id="ringCount">43</strong>直径統一 · 接点保持 · 十字90°</div>
+<canvas id="scene" aria-label="御所ヶ谷公園の遊具を参考にした、輪のサイズと接点を保ちながらカラーバンドが円周回転する3D模型"></canvas>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全43本、直径・太さ・配置を固定<br>接点と十字90°を維持してカラーバンドが回転</p></header>
+<div class="badge"><strong id="ringCount">43</strong>サイズ固定 · 接点保持 · 十字90°</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
  <div class="field color"><div class="field-title">COLOR MODE</div><div class="seg" id="colors"><button type="button" data-color="original">公園の3色</button><button type="button" class="active" data-color="gradient">連続グラデーション</button></div></div>
- <div class="field rotation"><div class="field-title">ROTATION · 立体回転 / サイズ優先</div><div class="seg" id="motion"><button type="button" data-motion="local" class="active">輪ごと3D</button><button type="button" data-motion="fixed">見た目固定</button><button type="button" data-motion="both">両方</button><button type="button" data-motion="spin">全体</button><button type="button" data-motion="still">静止</button></div></div>
+ <div class="field rotation"><div class="field-title">ROTATION · 形状固定</div><div class="seg" id="motion"><button type="button" data-motion="local" class="active">輪ごと</button><button type="button" data-motion="both">両方</button><button type="button" data-motion="spin">全体</button><button type="button" data-motion="still">静止</button></div></div>
  <div class="field speed"><label for="speed">回転速度（数値入力は上限なし）</label><div class="speed-line"><input type="range" id="speed" min="0" max="100" value="1" step="0.1"><input type="number" id="speedNumber" min="0" value="1.0" step="0.1" aria-label="回転速度の数値入力"></div></div>
  <div class="actions"><button id="reset" type="button">視点リセット</button><button id="pause" type="button" class="primary">一時停止</button></div>
 </div>
-<div class="minor">3D回転は円の向きが変化します。見た目固定は輪郭を維持して表面の模様が回ります。</div>
+<div class="minor">輪郭は固定。彩色された帯が輪の円周に沿って回転します（輪そのものの傾斜は変更しません）。</div>
 <script>
 (()=>{
 'use strict';
@@ -30,20 +30,27 @@ const gl=canvas.getContext('webgl',{antialias:true,alpha:false,depth:true,preser
 if(!gl){loading.textContent='WebGLに対応したブラウザで開いてください。';return;}
 const vs=`attribute vec3 aPos;attribute vec3 aNor;uniform mat4 uMVP;uniform mat4 uModel;uniform vec3 uCenter;varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying float vAngle;
 void main(){vec4 world=uModel*vec4(aPos,1.0);vPos=world.xyz;vNor=normalize(mat3(uModel)*aNor);vCluster=uCenter+aPos*0.23;vAngle=atan(aPos.y,aPos.x);gl_Position=uMVP*vec4(aPos,1.0);}`;
-const fs=`precision highp float;varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying float vAngle;uniform vec3 uEye;uniform vec3 uBase;uniform float uTime;uniform float uGradient;
-vec3 rgb(float h){return clamp(abs(fract(h+vec3(0.,0.666667,0.333333))*6.-3.)-1.,0.,1.);}
-void main(){float hue=fract(.63+vCluster.x*.064+vCluster.y*.070+vCluster.z*.048+uTime*.014+.018*sin(uTime*.18+vCluster.x*.8+vCluster.z*.7));vec3 spectrum=mix(vec3(1.),rgb(hue),.82);vec3 base=mix(uBase,spectrum,uGradient);
-// Surface markings live on the moving torus. At least two bright contrasting arcs
-// make in-plane spins readable while the geometry and contact points remain unchanged.
-float a=atan(sin(vAngle-0.25),cos(vAngle-0.25));
-float b=atan(sin(vAngle-3.15),cos(vAngle-3.15));
-float luminous=1.0-smoothstep(.16,.29,abs(a));
-float shadow=1.0-smoothstep(.14,.24,abs(b));
-float sheen=.08*sin(vAngle*4.0+.9);
-base=mix(base,vec3(.98,.99,1.0),luminous*.88);
-base=mix(base,vec3(.10,.15,.26),shadow*.78);
-base*=1.0+sheen;
-vec3 N=normalize(vNor),L=normalize(vec3(-.47,.79,.7)),V=normalize(uEye-vPos),H=normalize(L+V);float light=.68+.30*max(0.,dot(N,L))+.09*max(0.,dot(N,normalize(vec3(.8,-.17,-.25))));float spec=.28*pow(max(0.,dot(N,H)),38.);gl_FragColor=vec4(min(vec3(1.),base*light+vec3(spec)),1.0);}`;
+const fs=`precision highp float;
+varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying float vAngle;
+uniform vec3 uEye;uniform vec3 uBase;uniform float uTime;uniform float uGradient;
+vec3 rainbow(float h){return clamp(abs(fract(h+vec3(0.0,0.666667,0.333333))*6.0-3.0)-1.0,0.0,1.0);}
+vec3 richColor(float h){return mix(vec3(0.11),rainbow(h),0.82);}
+void main(){
+  // Hue stays continuous across neighboring rings, while time moves it slowly.
+  float hue=fract(0.60+vCluster.x*0.064+vCluster.y*0.070+vCluster.z*0.048+uTime*0.013);
+  vec3 base=mix(uBase,richColor(hue),uGradient);
+  // Colored, not white/black, marks reveal circular motion without changing shape.
+  // Because vAngle is the torus-local angle, the marks move with in-plane rotation.
+  float bandA=pow(max(cos(vAngle-0.20),0.0),11.0);
+  float bandB=pow(max(cos(vAngle-3.30),0.0),14.0);
+  vec3 toneA=mix(clamp(uBase*0.68+vec3(0.12,0.06,0.07),0.12,0.96),richColor(fract(hue+0.14)),uGradient);
+  vec3 toneB=mix(clamp(uBase*0.72+vec3(0.04,0.11,0.14),0.12,0.96),richColor(fract(hue-0.11)),uGradient);
+  base=mix(base,toneA,0.90*bandA);
+  base=mix(base,toneB,0.85*bandB);
+  // No specular white highlights, black shadow bands, or lighting that washes out color.
+  float softLight=0.89+0.08*max(dot(normalize(vNor),normalize(vec3(-0.47,0.79,0.70))),0.0);
+  gl_FragColor=vec4(clamp(base*softLight,0.10,0.96),1.0);
+}`;
 function makeShader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
 let program;
 try{program=gl.createProgram();gl.attachShader(program,makeShader(gl.VERTEX_SHADER,vs));gl.attachShader(program,makeShader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));}catch(e){loading.textContent='描画の初期化に失敗: '+e.message;return;}
@@ -152,25 +159,23 @@ let previous=0;
 function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previous||16)/1000);previous=ms;if(playing)t+=dt*speed;
  const s=1-Math.exp(-dt*10);yaw+=(tyaw-yaw)*s;pitch+=(tpitch-pitch)*s;dist+=(tdist-dist)*s;panX+=(tpanX-panX)*s;panY+=(tpanY-panY)*s;
  const dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- // The fixed X diameter is a geometric invariant shared by every hoop in one row.
- // Rigidly spinning each unit about that X axis makes the rings visibly tilt,
- // while leaving its +/-X contacts unmoved and its 90-degree paired cross intact.
- // A flat circular ring cannot visibly turn inside its own plane unless we give it
- // non-uniform surface markings (see shader); that is the 'fixed' alternative.
+ // Preserve all silhouettes/contact points and the exact 90-degree pair geometry.
+ // A uniform circular torus is symmetric about its normal: to SHOW its spinning,
+ // two strictly colored bands are attached to the local torus coordinates.
+ // The rings' position/orientation and dimensions never change during motion.
  const wholeSpin=(mode==='spin'||mode==='both')?rotZ(t*.20):rotZ(0);
  const whole=mult(wholeSpin,mult(rotY(yaw),rotX(pitch)));
  const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
  bindGeo(torus);
  for(const unit of units){
-  const angle=(mode==='local'||mode==='both'||mode==='fixed')?t*unit.rate:0;
-  const rigidSpin=quat([1,0,0],angle); // The shared X diameter is stationary in space.
-  const normalSpin=quat([0,0,1],angle); // Visible only through ring-surface markings.
+  const angle=(mode==='local'||mode==='both')?t*unit.rate:0;
+  const inPlaneSpin=quat([0,0,1],angle);
   const origin=translate(...unit.center);
   for(const r of unit.parts){
-   // Paired hoops receive exactly the same rigid matrix and never bend or scale.
-   const orientation=mode==='fixed'?qmul(r.orient,normalSpin):qmul(rigidSpin,r.orient);
-   const local=mult(origin,matrixQ(orientation));
+   // Both rings of a cross use the same spin phase and rate; each is rotated
+   // within its fixed plane, retaining all surface contacts and 90-degree cross.
+   const local=mult(origin,matrixQ(qmul(r.orient,inPlaneSpin)));
    draw(torus,local,whole,vp,unit.center,r.base);
   }
  }
