@@ -11,17 +11,17 @@
 </head>
 <body>
 <canvas id="scene" aria-label="御所ヶ谷公園の写真を参考にした、輪と直角クロスが連続回転する3D模型"></canvas>
-<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>輪の直径・太さは全43本共通<br>輪ごとに3D回転 · 接点と十字90°を維持</p></header>
-<div class="badge"><strong id="ringCount">43</strong>形状共通 · 接点保持 · 十字90°</div>
+<header class="mast"><div class="eyebrow">INTERACTIVE 3D STUDY</div><h1>RING STRUCTURE</h1><p>御所ヶ谷公園の写真を参考に新規構築した3層の輪<br>全43本の輪は同じ直径・太さ<br>回転しても見かけの輪郭・接点・十字90°を固定</p></header>
+<div class="badge"><strong id="ringCount">43</strong>輪郭固定 · 接点保持 · 十字90°</div>
 <div class="tip" id="tip">1本指で視点を回す · 2本指で位置移動／ピンチ拡大</div>
 <div class="loading" id="loading">3Dモデルを読み込み中…</div>
 <div class="panel">
  <div class="field color"><div class="field-title">COLOR MODE</div><div class="seg" id="colors"><button type="button" data-color="original">公園の3色</button><button type="button" class="active" data-color="gradient">連続グラデーション</button></div></div>
- <div class="field rotation"><div class="field-title">ROTATION</div><div class="seg" id="motion"><button type="button" data-motion="local" class="active">輪ごと3D</button><button type="button" data-motion="fixed">輪郭固定</button><button type="button" data-motion="both">両方</button><button type="button" data-motion="spin">全体</button><button type="button" data-motion="still">静止</button></div></div>
+ <div class="field rotation"><div class="field-title">ROTATION</div><div class="seg" id="motion"><button type="button" data-motion="fixed" class="active">輪ごと（サイズ固定）</button><button type="button" data-motion="both">全体＋輪ごと</button><button type="button" data-motion="local">立体回転</button><button type="button" data-motion="spin">全体</button><button type="button" data-motion="still">静止</button></div></div>
  <div class="field speed"><label for="speed">回転速度（数値入力は上限なし）</label><div class="speed-line"><input type="range" id="speed" min="0" max="100" value="1" step="0.1"><input type="number" id="speedNumber" min="0" value="1.0" step="0.1" aria-label="回転速度の数値入力"></div></div>
  <div class="actions"><button id="reset" type="button">視点リセット</button><button id="pause" type="button" class="primary">一時停止</button></div>
 </div>
-<div class="minor">輪ごと3D＝輪が立体回転します。輪郭固定＝円周上の模様だけが動きます。実際の直径・太さは全モード共通です。</div>
+<div class="minor">輪ごと（サイズ固定）は円の面内で輪を回し、広い色の模様で動きを表示。立体回転では斜め向きによる見かけの幅の変化が生じます。</div>
 <script>
 (()=>{
 'use strict';
@@ -34,23 +34,20 @@ const fs=`precision highp float;
 varying vec3 vNor;varying vec3 vPos;varying vec3 vCluster;varying vec2 vDir;
 uniform vec3 uEye;uniform vec3 uBase;uniform float uTime;uniform float uGradient;uniform float uBands;
 vec3 rainbow(float h){return clamp(abs(fract(h+vec3(0.0,0.666667,0.333333))*6.0-3.0)-1.0,0.0,1.0);}
-vec3 richColor(float h){return mix(vec3(0.11),rainbow(h),0.82);}
+vec3 richColor(float h){return mix(vec3(0.16),rainbow(h),0.76);}
 void main(){
-  // Hue stays continuous across neighboring rings, while time moves it slowly.
-  float hue=fract(0.60+vCluster.x*0.064+vCluster.y*0.070+vCluster.z*0.048+uTime*0.013);
+  float hue=fract(0.61+vCluster.x*0.064+vCluster.y*0.070+vCluster.z*0.048+uTime*0.010);
   vec3 base=mix(uBase,richColor(hue),uGradient);
-  // Colored, not white/black, marks reveal circular motion without changing shape.
-  // Ring-local direction avoids angle-wrap seams; marks move with in-plane rotation.
-  vec2 circumference=normalize(vDir);
-  float bandA=pow(max(dot(circumference,vec2(cos(0.20),sin(0.20))),0.0),11.0);
-  float bandB=pow(max(dot(circumference,vec2(cos(3.30),sin(3.30))),0.0),14.0);
-  vec3 toneA=mix(clamp(uBase*0.68+vec3(0.12,0.06,0.07),0.12,0.96),richColor(fract(hue+0.14)),uGradient);
-  vec3 toneB=mix(clamp(uBase*0.72+vec3(0.04,0.11,0.14),0.12,0.96),richColor(fract(hue-0.11)),uGradient);
-  base=mix(base,toneA,0.90*bandA*uBands);
-  base=mix(base,toneB,0.85*bandB*uBands);
-  // No specular white highlights, black shadow bands, or lighting that washes out color.
-  float softLight=0.89+0.08*max(dot(normalize(vNor),normalize(vec3(-0.47,0.79,0.70))),0.0);
-  gl_FragColor=vec4(clamp(base*softLight,0.10,0.96),1.0);
+  // Two broad colorful sectors are attached to the rotating hoop.
+  vec2 d=normalize(vDir);
+  float arc1=smoothstep(-0.16,0.65,dot(d,vec2(0.9563,0.2924)));
+  float arc2=smoothstep(0.12,0.78,dot(d,vec2(-0.8244,-0.5659)));
+  vec3 accent1=mix(clamp(uBase*0.74+vec3(0.16,0.045,0.12),0.15,0.91),richColor(fract(hue+0.24)),uGradient);
+  vec3 accent2=mix(clamp(uBase*0.70+vec3(0.01,0.13,0.12),0.15,0.91),richColor(fract(hue-0.19)),uGradient);
+  base=mix(base,accent1,0.90*arc1*uBands);
+  base=mix(base,accent2,0.78*arc2*uBands);
+  float light=0.90+0.07*max(0.0,dot(normalize(vNor),normalize(vec3(-0.47,0.79,0.70))));
+  gl_FragColor=vec4(clamp(base*light,0.13,0.92),1.0);
 }`;
 function makeShader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
 let program;
@@ -123,7 +120,7 @@ for(const u of units){
 }
 document.getElementById('ringCount').textContent=rings.length;
 function bindGeo(g){gl.bindBuffer(gl.ARRAY_BUFFER,g.bV);gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,g.bN);gl.enableVertexAttribArray(aNor);gl.vertexAttribPointer(aNor,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,g.bI);}
-let mode='local',colorMode='gradient',speed=1,playing=true,t=0;
+let mode='fixed',colorMode='gradient',speed=1,playing=true,t=0;
 for(const [id,key,change] of [['colors','color',s=>colorMode=s],['motion','motion',s=>mode=s]])for(const b of document.querySelectorAll('#'+id+' button'))b.addEventListener('click',()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('active',x===b));change(b.dataset[key]);});
 const slider=document.getElementById('speed'),number=document.getElementById('speedNumber');
 function setSpeed(x){x=Number(x);if(!Number.isFinite(x))return;speed=Math.max(0,x);number.value=speed.toFixed(1);if(speed>Number(slider.max))slider.max=String(Math.ceil(speed/100)*100);slider.value=String(speed);}
@@ -168,7 +165,7 @@ function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previo
  const whole=mult(wholeSpin,mult(rotY(yaw),rotX(pitch)));
  const eye=[0,0,dist];const layout=cameraLayout(dist);const vp=mult(ortho(-layout.halfWidth,layout.halfWidth,-layout.halfHeight,layout.halfHeight,.1,80),translate(panX,panY+layout.verticalOffset,-dist));
  gl.uniform3fv(U.eye,new Float32Array(eye));gl.uniform1f(U.time,t);gl.uniform1f(U.grad,colorMode==='gradient'?1:0);
- gl.uniform1f(U.bands,mode==='fixed'?1:0);
+ gl.uniform1f(U.bands,mode==='fixed'||mode==='both'?1:0);
  bindGeo(torus);
  for(const unit of units){
   const moving=mode==='local'||mode==='both'||mode==='fixed';
@@ -177,7 +174,7 @@ function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,(ms-previo
   const planeSpin=quat([0,0,1],angle);
   const origin=translate(...unit.center);
   for(const r of unit.parts){
-   const orientation=mode==='fixed'?qmul(r.orient,planeSpin):qmul(rigidSpin,r.orient);
+   const orientation=(mode==='fixed'||mode==='both')?qmul(r.orient,planeSpin):qmul(rigidSpin,r.orient);
    const local=mult(origin,matrixQ(orientation));
    draw(torus,local,whole,vp,unit.center,r.base);
   }
